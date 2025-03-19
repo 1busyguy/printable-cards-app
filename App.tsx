@@ -1,15 +1,32 @@
-import React from 'react';
-import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, ActivityIndicator, LogBox } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 
+// Ignore specific warnings
+LogBox.ignoreLogs([
+  'expo-app-loading is deprecated',
+  'AsyncStorage has been extracted from react-native',
+  'Deprecation warning: Setting a timer for a long period',
+]);
+
 function AppContent() {
   const { isLoading, user } = useAuth();
+  const [appReady, setAppReady] = useState(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    // Simulate app initialization
+    const timeout = setTimeout(() => {
+      setAppReady(true);
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  if (isLoading || !appReady) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4285F4" />

@@ -49,59 +49,161 @@ export function CardCreator() {
     }
   }
 
-  function generateCardHtml() {
+  function generateCardHtml(imageDataUrl: string = '') {
+    // Use the passed imageDataUrl for both web and mobile platforms
+    const imageSource = imageDataUrl || 'https://via.placeholder.com/400x300/e0e0e0/666666?text=No+Image';
+    
     return `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
-          <title>Greeting Card</title>
+          <title>Foldable Greeting Card</title>
           <style>
+            @media print {
+              @page {
+                size: letter;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+              }
+              .page-break {
+                page-break-after: always;
+              }
+            }
+            
             body {
               font-family: Arial, sans-serif;
               margin: 0;
               padding: 0;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              height: 100vh;
               background-color: white;
             }
-            .card {
-              width: 800px;
-              height: 600px;
-              border: 1px solid #ccc;
-              border-radius: 8px;
+            
+            .card-container {
+              width: 8.5in;
+              height: 11in;
+              position: relative;
               overflow: hidden;
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+            
+            .fold-line-horizontal {
+              position: absolute;
+              width: 100%;
+              height: 1px;
+              border-top: 1px dashed #ccc;
+              top: 5.5in;
+              left: 0;
+            }
+            
+            .fold-line-vertical {
+              position: absolute;
+              height: 100%;
+              width: 1px;
+              border-left: 1px dashed #ccc;
+              left: 4.25in;
+              top: 0;
+            }
+            
+            .fold-instructions {
+              position: absolute;
+              font-size: 10px;
+              color: #999;
+              bottom: 0.25in;
+              width: 100%;
+              text-align: center;
+            }
+            
+            .card-front {
+              position: absolute;
+              width: 4.25in;
+              height: 5.5in;
+              top: 0;
+              left: 0;
+              padding: 0.25in;
+              box-sizing: border-box;
+              text-align: center;
               display: flex;
               flex-direction: column;
+              justify-content: center;
               align-items: center;
-              padding: 20px;
-              background-color: white;
             }
+            
+            .card-inside-left {
+              position: absolute;
+              width: 4.25in;
+              height: 5.5in;
+              top: 0;
+              left: 4.25in;
+              padding: 0.25in;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+            }
+            
+            .card-inside-right {
+              position: absolute;
+              width: 4.25in;
+              height: 5.5in;
+              top: 5.5in;
+              left: 0;
+              padding: 0.25in;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+            }
+            
+            .card-back {
+              position: absolute;
+              width: 4.25in;
+              height: 5.5in;
+              top: 5.5in;
+              left: 4.25in;
+              padding: 0.25in;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: column;
+              justify-content: flex-end;
+              align-items: center;
+            }
+            
             .image-container {
-              width: 100%;
-              height: 65%;
+              width: 90%;
+              height: 60%;
+              overflow: hidden;
+              margin-bottom: 20px;
               display: flex;
               justify-content: center;
-              margin-bottom: 20px;
+              align-items: center;
             }
+            
             .image-container img {
               max-width: 100%;
               max-height: 100%;
               object-fit: contain;
             }
+            
             .greeting {
-              font-size: 24px;
+              font-size: 18px;
               text-align: center;
-              margin-top: 20px;
               color: #333;
               line-height: 1.5;
+              margin: 20px 0;
             }
+            
+            .title {
+              font-size: 24px;
+              font-weight: bold;
+              margin-bottom: 15px;
+              color: #333;
+            }
+            
             .footer {
-              font-size: 14px;
+              font-size: 12px;
               color: #888;
               margin-top: 20px;
               text-align: center;
@@ -109,15 +211,39 @@ export function CardCreator() {
           </style>
         </head>
         <body>
-          <div class="card">
-            <div class="image-container">
-              ${selectedImage ? `<img src="${selectedImage}" alt="Greeting Card Image" />` : ''}
+          <div class="card-container">
+            <!-- Folding guidelines -->
+            <div class="fold-line-horizontal"></div>
+            <div class="fold-line-vertical"></div>
+            <div class="fold-instructions">Fold along dotted lines</div>
+            
+            <!-- Card Front -->
+            <div class="card-front">
+              <div class="title">Happy Greetings!</div>
+              <div class="image-container">
+                <img src="${imageSource}" alt="Greeting Card Image" />
+              </div>
             </div>
-            <div class="greeting">
-              ${greeting || 'Your greeting will appear here'}
+            
+            <!-- Inside Left -->
+            <div class="card-inside-left">
+              <div class="image-container">
+                <img src="${imageSource}" alt="Greeting Card Image" />
+              </div>
             </div>
-            <div class="footer">
-              Created by ${user?.name || 'Card Creator User'} with Card Creator
+            
+            <!-- Inside Right (main greeting area) -->
+            <div class="card-inside-right">
+              <div class="greeting">
+                ${greeting || 'Your greeting will appear here'}
+              </div>
+            </div>
+            
+            <!-- Card Back -->
+            <div class="card-back">
+              <div class="footer">
+                Created by ${user?.name || 'Card Creator User'} with Card Creator
+              </div>
             </div>
           </div>
         </body>
@@ -139,31 +265,36 @@ export function CardCreator() {
     try {
       setIsLoading(true);
 
-      // For web platform, we can directly use the HTML to generate a PDF
+      // Handle different platforms
+      let imageDataUrl = '';
+      
       if (Platform.OS === 'web') {
-        const { uri } = await Print.printToFileAsync({
-          html: generateCardHtml(),
-        });
-        Print.printAsync({ uri });
+        // Web platform: For web, we need to use browser APIs to convert the image
+        // This is a simplified version that works in browsers but not in React Native
+        try {
+          // Pass the image URL directly for web platform
+          imageDataUrl = selectedImage;
+        } catch (error) {
+          console.error('Error processing image on web:', error);
+        }
       } else {
-        // For mobile platforms, we need to create a base64 string from the image
-        const imageBase64 = await FileSystem.readAsStringAsync(selectedImage, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-
-        // Generate HTML with base64 image
-        const htmlContent = generateCardHtml().replace(
-          selectedImage,
-          `data:image/jpeg;base64,${imageBase64}`
-        );
-
-        const { uri } = await Print.printToFileAsync({
-          html: htmlContent,
-        });
-
-        // Show print dialog
-        await Print.printAsync({ uri });
+        // Mobile platforms: Use Expo FileSystem to convert to base64
+        try {
+          const imageBase64 = await FileSystem.readAsStringAsync(selectedImage, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          imageDataUrl = `data:image/jpeg;base64,${imageBase64}`;
+        } catch (error) {
+          console.error('Error converting image to base64:', error);
+        }
       }
+
+      // Generate and print the card
+      const { uri } = await Print.printToFileAsync({
+        html: generateCardHtml(imageDataUrl),
+      });
+      
+      await Print.printAsync({ uri });
     } catch (error) {
       console.error('Error generating printable card:', error);
       Alert.alert('Error', 'Failed to generate printable card. Please try again.');
@@ -201,6 +332,13 @@ export function CardCreator() {
           multiline
           numberOfLines={4}
         />
+      </View>
+
+      <View style={styles.infoSection}>
+        <Text style={styles.infoText}>
+          ℹ️ The card will be formatted to print on a standard letter-sized paper (8.5" x 11"), 
+          with fold lines to create a greeting card.
+        </Text>
       </View>
       
       <TouchableOpacity
@@ -275,6 +413,19 @@ const styles = StyleSheet.create({
     minHeight: 120,
     textAlignVertical: 'top',
     fontSize: 16,
+  },
+  infoSection: {
+    marginBottom: 20,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4285F4',
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
   },
   generateButton: {
     backgroundColor: '#4285F4',
