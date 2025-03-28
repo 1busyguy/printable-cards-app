@@ -50,14 +50,18 @@ export function CardCreator() {
   }
 
   function generateCardHtml(imageDataUrl: string = '') {
-    // Use the passed imageDataUrl for both web and mobile platforms
+    // Use a placeholder image if no image data is provided
     const imageSource = imageDataUrl || 'https://via.placeholder.com/400x300/e0e0e0/666666?text=No+Image';
+    
+    // Format greeting text with proper line breaks for HTML
+    const formattedGreeting = greeting.replace(/\n/g, '<br>');
     
     return `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Foldable Greeting Card</title>
           <style>
             @media print {
@@ -70,6 +74,9 @@ export function CardCreator() {
               }
               .page-break {
                 page-break-after: always;
+              }
+              .fold-line-horizontal, .fold-line-vertical, .fold-instructions {
+                display: block !important;
               }
             }
             
@@ -85,33 +92,38 @@ export function CardCreator() {
               height: 11in;
               position: relative;
               overflow: hidden;
+              background-color: white;
+              page-break-after: always;
             }
             
             .fold-line-horizontal {
               position: absolute;
               width: 100%;
               height: 1px;
-              border-top: 1px dashed #ccc;
+              border-top: 2px dashed #999;
               top: 5.5in;
               left: 0;
+              z-index: 100;
             }
             
             .fold-line-vertical {
               position: absolute;
               height: 100%;
               width: 1px;
-              border-left: 1px dashed #ccc;
+              border-left: 2px dashed #999;
               left: 4.25in;
               top: 0;
+              z-index: 100;
             }
             
             .fold-instructions {
               position: absolute;
               font-size: 10px;
-              color: #999;
+              color: #777;
               bottom: 0.25in;
               width: 100%;
               text-align: center;
+              z-index: 100;
             }
             
             .card-front {
@@ -127,6 +139,8 @@ export function CardCreator() {
               flex-direction: column;
               justify-content: center;
               align-items: center;
+              background-color: white;
+              z-index: 1;
             }
             
             .card-inside-left {
@@ -141,6 +155,8 @@ export function CardCreator() {
               flex-direction: column;
               justify-content: center;
               align-items: center;
+              background-color: white;
+              z-index: 1;
             }
             
             .card-inside-right {
@@ -155,6 +171,8 @@ export function CardCreator() {
               flex-direction: column;
               justify-content: center;
               align-items: center;
+              background-color: white;
+              z-index: 1;
             }
             
             .card-back {
@@ -169,6 +187,8 @@ export function CardCreator() {
               flex-direction: column;
               justify-content: flex-end;
               align-items: center;
+              background-color: white;
+              z-index: 1;
             }
             
             .image-container {
@@ -179,6 +199,9 @@ export function CardCreator() {
               display: flex;
               justify-content: center;
               align-items: center;
+              background-color: #f9f9f9;
+              border: 1px solid #eee;
+              border-radius: 5px;
             }
             
             .image-container img {
@@ -193,6 +216,7 @@ export function CardCreator() {
               color: #333;
               line-height: 1.5;
               margin: 20px 0;
+              width: 90%;
             }
             
             .title {
@@ -207,6 +231,29 @@ export function CardCreator() {
               color: #888;
               margin-top: 20px;
               text-align: center;
+            }
+
+            .folding-guide {
+              position: absolute;
+              top: 11.5in;
+              left: 0;
+              width: 8.5in;
+              padding: 0.5in;
+              text-align: center;
+              font-size: 14px;
+              line-height: 1.5;
+              color: #333;
+              border-top: 1px solid #ccc;
+            }
+
+            .steps {
+              text-align: left;
+              margin: 0 auto;
+              width: 80%;
+            }
+
+            .step {
+              margin-bottom: 10px;
             }
           </style>
         </head>
@@ -235,7 +282,7 @@ export function CardCreator() {
             <!-- Inside Right (main greeting area) -->
             <div class="card-inside-right">
               <div class="greeting">
-                ${greeting || 'Your greeting will appear here'}
+                ${formattedGreeting || 'Your greeting will appear here'}
               </div>
             </div>
             
@@ -244,6 +291,17 @@ export function CardCreator() {
               <div class="footer">
                 Created by ${user?.name || 'Card Creator User'} with Card Creator
               </div>
+            </div>
+          </div>
+          
+          <!-- Folding Guide -->
+          <div class="folding-guide">
+            <h3>How to fold your card:</h3>
+            <div class="steps">
+              <div class="step">1. Print this page on letter-sized paper (8.5" x 11")</div>
+              <div class="step">2. Fold the paper in half horizontally along the horizontal dotted line</div>
+              <div class="step">3. Fold the paper in half vertically along the vertical dotted line</div>
+              <div class="step">4. The front of the card should now be visible with your image</div>
             </div>
           </div>
         </body>
@@ -264,18 +322,27 @@ export function CardCreator() {
 
     try {
       setIsLoading(true);
-
-      // Handle different platforms
+      
+      // Handle image processing differently for web and mobile
       let imageDataUrl = '';
       
       if (Platform.OS === 'web') {
-        // Web platform: For web, we need to use browser APIs to convert the image
-        // This is a simplified version that works in browsers but not in React Native
         try {
-          // Pass the image URL directly for web platform
-          imageDataUrl = selectedImage;
+          // For web, fetch the image and convert it to a data URL
+          const response = await fetch(selectedImage);
+          const blob = await response.blob();
+          
+          // Create a FileReader to convert the blob to a data URL
+          imageDataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
         } catch (error) {
           console.error('Error processing image on web:', error);
+          // Use the direct URL as fallback if fetch fails
+          imageDataUrl = selectedImage;
         }
       } else {
         // Mobile platforms: Use Expo FileSystem to convert to base64
@@ -289,18 +356,55 @@ export function CardCreator() {
         }
       }
 
-      // Generate and print the card
+      // Generate the HTML for the card
+      const html = generateCardHtml(imageDataUrl);
+      
+      // Create a printable file
       const { uri } = await Print.printToFileAsync({
-        html: generateCardHtml(imageDataUrl),
+        html,
+        width: 8.5 * 96, // 8.5 inches at 96 DPI
+        height: 11 * 96, // 11 inches at 96 DPI
+        base64: false
       });
       
-      await Print.printAsync({ uri });
+      // Check if the URI exists before printing
+      if (!uri) {
+        throw new Error('Failed to generate printable file');
+      }
+      
+      // Show the print dialog
+      await Print.printAsync({ 
+        uri,
+        orientation: Print.Orientation.portrait
+      });
     } catch (error) {
       console.error('Error generating printable card:', error);
       Alert.alert('Error', 'Failed to generate printable card. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // Preview the card directly in the app
+  function previewCard() {
+    if (!selectedImage) {
+      Alert.alert('Missing Image', 'Please select an image for your card');
+      return;
+    }
+
+    if (!greeting.trim()) {
+      Alert.alert('Missing Greeting', 'Please add a greeting message for your card');
+      return;
+    }
+
+    // Logic for previewing the card could be added here
+    Alert.alert(
+      'Card Preview', 
+      'Your card has been created with your image and the greeting: "' + greeting + '"',
+      [
+        { text: 'OK' }
+      ]
+    );
   }
 
   return (
@@ -336,22 +440,24 @@ export function CardCreator() {
 
       <View style={styles.infoSection}>
         <Text style={styles.infoText}>
-          ℹ️ The card will be formatted to print on a standard letter-sized paper (8.5" x 11"), 
-          with fold lines to create a greeting card.
+          ℹ️ The card will be formatted to print on a standard letter-sized paper (8.5" x 11"). 
+          After printing, fold the paper along the dotted lines to create your greeting card.
         </Text>
       </View>
       
-      <TouchableOpacity
-        style={styles.generateButton}
-        onPress={generatePrintableCard}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.generateButtonText}>Generate Printable Card</Text>
-        )}
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.generateButton}
+          onPress={generatePrintableCard}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.generateButtonText}>Generate Printable Card</Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -427,13 +533,18 @@ const styles = StyleSheet.create({
     color: '#333',
     lineHeight: 20,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
   generateButton: {
     backgroundColor: '#4285F4',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 16,
-    marginBottom: 24,
+    flex: 1,
   },
   generateButtonText: {
     color: '#fff',
